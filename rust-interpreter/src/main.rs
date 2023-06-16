@@ -1,6 +1,7 @@
 #![allow(dead_code, non_snake_case, unused)]
 
 mod scanner;
+use bytecode::BytecodeGenerator;
 use scanner::*;
 
 mod parser;
@@ -12,6 +13,8 @@ mod expr;
 
 mod interpreter;
 use interpreter::*;
+
+mod bytecode;
 
 use std::rc::Rc;
 
@@ -41,16 +44,31 @@ fn main() -> Result<(), ()> {
         end
     "#;
 
-    let mut scanner = Scanner::new(if_code);
+    let easy = r#"
+        1 - 2;
+    "#;
+
+    let mut scanner = Scanner::new(easy);
     let tokens = scanner.tokenize()?;
 
     let mut parser = Parser::new(tokens);
     let statements = parser.parse()?;
 
+    for s in &statements {
+        println!("{s:?}");
+    }
+
+    let mut gen = BytecodeGenerator::new();
+    let insts = gen.generate(Rc::new(statements));
+
+    for inst in insts {
+        println!("{inst:?}");
+    }
+
     // possible optimization steps
 
-    let interpreter = Interpreter::new();
-    interpreter.interpret(Rc::new(statements));
+    //let interpreter = Interpreter::new();
+    //interpreter.interpret(Rc::new(statements));
 
     Ok(())
 }
