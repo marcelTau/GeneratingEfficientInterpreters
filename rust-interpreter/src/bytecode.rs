@@ -42,7 +42,7 @@ impl BytecodeGenerator {
 
     pub fn generate(&mut self, statements: Rc<Vec<Rc<Stmt>>>) -> Vec<ByteCode> {
         for statement in statements.deref() {
-            statement.accept(statement.clone(), self);
+            statement.accept(self);
         }
         self.instructions.borrow().to_vec()
     }
@@ -55,27 +55,26 @@ impl BytecodeGenerator {
 }
 
 impl StmtVisitor<()> for BytecodeGenerator {
-    fn visit_block_stmt(&self, wrapper: std::rc::Rc<Stmt>, stmt: &BlockStmt) -> Result<(), ()> {
+    fn visit_block_stmt(&self, stmt: &BlockStmt) -> Result<(), ()> {
         todo!()
     }
 
-    fn visit_if_stmt(&self, wrapper: std::rc::Rc<Stmt>, stmt: &IfStmt) -> Result<(), ()> {
+    fn visit_if_stmt(&self, stmt: &IfStmt) -> Result<(), ()> {
         todo!()
     }
 
     fn visit_expression_stmt(
         &self,
-        wrapper: std::rc::Rc<Stmt>,
         stmt: &ExpressionStmt,
     ) -> Result<(), ()> {
-        stmt.expression.accept(stmt.expression.clone(), self)
+        stmt.expression.accept(self)
     }
 
-    fn visit_print_stmt(&self, wrapper: std::rc::Rc<Stmt>, stmt: &PrintStmt) -> Result<(), ()> {
+    fn visit_print_stmt(&self, stmt: &PrintStmt) -> Result<(), ()> {
         todo!()
     }
 
-    fn visit_while_stmt(&self, wrapper: std::rc::Rc<Stmt>, stmt: &WhileStmt) -> Result<(), ()> {
+    fn visit_while_stmt(&self, stmt: &WhileStmt) -> Result<(), ()> {
         todo!()
     }
 }
@@ -115,8 +114,8 @@ macro_rules! perform_operation {
 }
 
 impl ExprVisitor<()> for BytecodeGenerator {
-    fn visit_assign_expr(&self, wrapper: Rc<Expr>, expr: &AssignExpr) -> Result<(), ()> {
-        expr.value.accept(expr.value.clone(), self);
+    fn visit_assign_expr(&self, expr: &AssignExpr) -> Result<(), ()> {
+        expr.value.accept(self);
         if let Some(Object::Variable(name)) = &expr.name.literal {
             self.instructions.borrow_mut().push(ByteCode::Var(name.to_string()));
             let insts = self.instructions.borrow().clone();
@@ -130,10 +129,10 @@ impl ExprVisitor<()> for BytecodeGenerator {
         Ok(())
     }
 
-    fn visit_binary_expr(&self, wrapper: Rc<Expr>, expr: &BinaryExpr) -> Result<(), ()> {
+    fn visit_binary_expr(&self, expr: &BinaryExpr) -> Result<(), ()> {
         use ByteCode::*;
-        expr.left.accept(expr.left.clone(), self);
-        expr.right.accept(expr.right.clone(), self);
+        expr.left.accept(self);
+        expr.right.accept(self);
         let insts = self.instructions.borrow().clone();
         match &expr.operator {
             Token { token_type: TokenType::Plus, .. } => perform_operation!(self, insts, +, Add),
@@ -149,11 +148,11 @@ impl ExprVisitor<()> for BytecodeGenerator {
         Ok(())
     }
 
-    fn visit_grouping_expr(&self, wrapper: Rc<Expr>, expr: &GroupingExpr) -> Result<(), ()> {
-        expr.expression.accept(expr.expression.clone(), self)
+    fn visit_grouping_expr(&self, expr: &GroupingExpr) -> Result<(), ()> {
+        expr.expression.accept(self)
     }
 
-    fn visit_literal_expr(&self, wrapper: Rc<Expr>, expr: &LiteralExpr) -> Result<(), ()> {
+    fn visit_literal_expr(&self, expr: &LiteralExpr) -> Result<(), ()> {
         if let Some(value) = &expr.value {
             match value {
                 Object::Num(n) => self
@@ -177,9 +176,9 @@ impl ExprVisitor<()> for BytecodeGenerator {
         }
     }
 
-    fn visit_logical_expr(&self, wrapper: Rc<Expr>, expr: &LogicalExpr) -> Result<(), ()> {
-        expr.left.accept(expr.left.clone(), self);
-        expr.right.accept(expr.right.clone(), self);
+    fn visit_logical_expr(&self, expr: &LogicalExpr) -> Result<(), ()> {
+        expr.left.accept(self);
+        expr.right.accept(self);
         match &expr.operator {
             Token {
                 token_type: TokenType::And,
@@ -194,11 +193,11 @@ impl ExprVisitor<()> for BytecodeGenerator {
         Ok(())
     }
 
-    fn visit_unary_expr(&self, wrapper: Rc<Expr>, expr: &UnaryExpr) -> Result<(), ()> {
+    fn visit_unary_expr(&self, expr: &UnaryExpr) -> Result<(), ()> {
         todo!()
     }
 
-    fn visit_variable_expr(&self, wrapper: Rc<Expr>, expr: &VariableExpr) -> Result<(), ()> {
+    fn visit_variable_expr(&self, expr: &VariableExpr) -> Result<(), ()> {
         if let Some(Object::Variable(name)) = &expr.name.literal {
             self.instructions
                 .borrow_mut()

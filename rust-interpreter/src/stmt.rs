@@ -13,13 +13,13 @@ pub enum Stmt {
 }
 
 impl Stmt {
-    pub fn accept<T>(&self, wrapper: Rc<Stmt>, visitor: &dyn StmtVisitor<T>) -> Result<T, ()> {
+    pub fn accept<T>(&self, visitor: &dyn StmtVisitor<T>) -> Result<T, ()> {
         match self {
-            Stmt::Block(x) => visitor.visit_block_stmt(wrapper, x),
-            Stmt::If(x) => visitor.visit_if_stmt(wrapper, x),
-            Stmt::Expression(x) => visitor.visit_expression_stmt(wrapper, x),
-            Stmt::Print(x) => visitor.visit_print_stmt(wrapper, x),
-            Stmt::While(x) => visitor.visit_while_stmt(wrapper, x),
+            Stmt::Block(x) => visitor.visit_block_stmt(x),
+            Stmt::If(x) => visitor.visit_if_stmt(x),
+            Stmt::Expression(x) => visitor.visit_expression_stmt(x),
+            Stmt::Print(x) => visitor.visit_print_stmt(x),
+            Stmt::While(x) => visitor.visit_while_stmt(x),
         }
     }
 }
@@ -53,10 +53,10 @@ pub struct WhileStmt {
 }
 
 pub trait StmtVisitor<T> {
-    fn visit_block_stmt(&self, wrapper: Rc<Stmt>, stmt: &BlockStmt) -> Result<T, ()>;
-    fn visit_if_stmt(&self, wrapper: Rc<Stmt>, stmt: &IfStmt) -> Result<T, ()>;
-    fn visit_expression_stmt(&self, wrapper: Rc<Stmt>, stmt: &ExpressionStmt) -> Result<T, ()>;
-    fn visit_print_stmt(&self, wrapper: Rc<Stmt>, stmt: &PrintStmt) -> Result<T, ()>;
-    fn visit_while_stmt(&self, wrapper: Rc<Stmt>, stmt: &WhileStmt) -> Result<T, ()>;
+    fn visit_block_stmt(&self, stmt: &BlockStmt) -> Result<T, ()>;
+    fn visit_if_stmt(&self, stmt: &IfStmt) -> Result<T, ()>;
+    fn visit_expression_stmt(&self, stmt: &ExpressionStmt) -> Result<T, ()>;
+    fn visit_print_stmt(&self, stmt: &PrintStmt) -> Result<T, ()>;
+    fn visit_while_stmt(&self, stmt: &WhileStmt) -> Result<T, ()>;
 }
 

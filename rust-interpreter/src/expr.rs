@@ -13,15 +13,15 @@ pub enum Expr {
 }
 
 impl Expr {
-    pub fn accept<T>(&self, wrapper: Rc<Expr>, visitor: &dyn ExprVisitor<T>) -> Result<T, ()> {
+    pub fn accept<T>(&self, visitor: &dyn ExprVisitor<T>) -> Result<T, ()> {
         match self {
-            Expr::Assign(x) => visitor.visit_assign_expr(wrapper, x),
-            Expr::Binary(x) => visitor.visit_binary_expr(wrapper, x),
-            Expr::Grouping(x) => visitor.visit_grouping_expr(wrapper, x),
-            Expr::Literal(x) => visitor.visit_literal_expr(wrapper, x),
-            Expr::Logical(x) => visitor.visit_logical_expr(wrapper, x),
-            Expr::Unary(x) => visitor.visit_unary_expr(wrapper, x),
-            Expr::Variable(x) => visitor.visit_variable_expr(wrapper, x),
+            Expr::Assign(x) => visitor.visit_assign_expr(x),
+            Expr::Binary(x) => visitor.visit_binary_expr(x),
+            Expr::Grouping(x) => visitor.visit_grouping_expr(x),
+            Expr::Literal(x) => visitor.visit_literal_expr(x),
+            Expr::Logical(x) => visitor.visit_logical_expr(x),
+            Expr::Unary(x) => visitor.visit_unary_expr(x),
+            Expr::Variable(x) => visitor.visit_variable_expr(x),
         }
     }
 }
@@ -68,12 +68,12 @@ pub struct VariableExpr {
 }
 
 pub trait ExprVisitor<T> {
-    fn visit_assign_expr(&self, wrapper: Rc<Expr>, expr: &AssignExpr) -> Result<T, ()>;
-    fn visit_binary_expr(&self, wrapper: Rc<Expr>, expr: &BinaryExpr) -> Result<T, ()>;
-    fn visit_grouping_expr(&self, wrapper: Rc<Expr>, expr: &GroupingExpr) -> Result<T, ()>;
-    fn visit_literal_expr(&self, wrapper: Rc<Expr>, expr: &LiteralExpr) -> Result<T, ()>;
-    fn visit_logical_expr(&self, wrapper: Rc<Expr>, expr: &LogicalExpr) -> Result<T, ()>;
-    fn visit_unary_expr(&self, wrapper: Rc<Expr>, expr: &UnaryExpr) -> Result<T, ()>;
-    fn visit_variable_expr(&self, wrapper: Rc<Expr>, expr: &VariableExpr) -> Result<T, ()>;
+    fn visit_assign_expr(&self, expr: &AssignExpr) -> Result<T, ()>;
+    fn visit_binary_expr(&self, expr: &BinaryExpr) -> Result<T, ()>;
+    fn visit_grouping_expr(&self, expr: &GroupingExpr) -> Result<T, ()>;
+    fn visit_literal_expr(&self, expr: &LiteralExpr) -> Result<T, ()>;
+    fn visit_logical_expr(&self, expr: &LogicalExpr) -> Result<T, ()>;
+    fn visit_unary_expr(&self, expr: &UnaryExpr) -> Result<T, ()>;
+    fn visit_variable_expr(&self, expr: &VariableExpr) -> Result<T, ()>;
 }
 

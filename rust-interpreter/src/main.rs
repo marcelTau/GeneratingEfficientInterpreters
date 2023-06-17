@@ -11,12 +11,12 @@ mod stmt;
 
 mod expr;
 
-mod interpreter;
-use interpreter::*;
+//mod interpreter;
+//use interpreter::*;
 
 mod bytecode;
 
-use std::rc::Rc;
+use std::{rc::Rc, ops::Deref};
 
 fn main() -> Result<(), ()> {
     let code = r#"
@@ -55,7 +55,7 @@ fn main() -> Result<(), ()> {
     let tokens = scanner.tokenize()?;
 
     let mut parser = Parser::new(tokens);
-    let statements = parser.parse()?;
+    let mut statements = parser.parse()?;
 
     for s in &statements {
         println!("{s:?}");
