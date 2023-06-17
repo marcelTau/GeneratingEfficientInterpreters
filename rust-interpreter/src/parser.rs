@@ -247,6 +247,14 @@ impl Parser {
             })));
         }
 
+        if self.is_match(&[TokenType::LeftParen]) {
+            let expr = self.expression()?;
+            self.consume(&TokenType::RightParen, "Expect ')' after expression.")?;
+            return Ok(Expr::Grouping(Rc::new(GroupingExpr {
+                expression: Rc::new(expr),
+            })));
+        }
+
         unreachable!("{:?}", self.tokens[self.current])
     }
 
@@ -324,8 +332,6 @@ impl Parser {
         } else {
             None
         };
-        
-        self.consume(&TokenType::End, "Expect 'end' after if-block");
 
         Ok(Stmt::If(Rc::new(IfStmt {
             condition: Rc::new(condition),

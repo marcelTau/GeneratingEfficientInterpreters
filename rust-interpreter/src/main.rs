@@ -45,7 +45,10 @@ fn main() -> Result<(), ()> {
     "#;
 
     let easy = r#"
-        1 - 2;
+        a := 10;
+        b := 12;
+        c := a + b;
+
     "#;
 
     let mut scanner = Scanner::new(easy);
@@ -60,6 +63,10 @@ fn main() -> Result<(), ()> {
 
     let mut gen = BytecodeGenerator::new();
     let insts = gen.generate(Rc::new(statements));
+
+    println!("===== Variables =====");
+    gen.show_variables();
+    println!("=====================");
 
     for inst in insts {
         println!("{inst:?}");

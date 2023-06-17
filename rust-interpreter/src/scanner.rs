@@ -171,6 +171,8 @@ impl Scanner {
             ("then".to_string(), TokenType::Then),
             ("end".to_string(), TokenType::End),
             ("print".to_string(), TokenType::Print),
+            ("true".to_string(), TokenType::True),
+            ("false".to_string(), TokenType::False),
         ]);
         Scanner {
             source_code: source_code.to_string(),
