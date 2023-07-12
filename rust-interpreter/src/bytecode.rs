@@ -120,7 +120,16 @@ impl StmtVisitor<()> for BytecodeGenerator {
     }
 
     fn visit_while_stmt(&self, stmt: &WhileStmt) -> Result<(), ()> {
-        todo!()
+        let start_label = unsafe { self.generate_label("start_label") };
+        let end_label = unsafe { self.generate_label("end_label") };
+
+        self.instructions.borrow_mut().push(ByteCode::Label(start_label.clone()));
+        stmt.condition.accept(self);
+        self.instructions.borrow_mut().push(ByteCode::Jz { label: end_label.clone(), offset: 0 });
+        stmt.body.accept(self);
+        self.instructions.borrow_mut().push(ByteCode::Jmp { label: start_label, offset: 0 });
+        self.instructions.borrow_mut().push(ByteCode::Label(end_label));
+        Ok(())
     }
 }
 

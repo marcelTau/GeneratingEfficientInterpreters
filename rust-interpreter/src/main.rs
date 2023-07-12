@@ -51,13 +51,13 @@ fn resolve_labels(code: &mut [ByteCode]) {
     for (current, inst) in code.iter_mut().enumerate() {
         match inst {
             ByteCode::Jz { label, offset } => {
-                *offset = cloned.iter().position(|i| *i == ByteCode::Label(label.to_string())).unwrap_or(0) - current;
+                *offset = cloned.iter().position(|i| *i == ByteCode::Label(label.to_string())).unwrap_or(0).saturating_sub(current);
             }
             ByteCode::JNz { label, offset } => {
-                *offset = cloned.iter().position(|i| *i == ByteCode::Label(label.to_string())).unwrap_or(0) - current;
+                *offset = cloned.iter().position(|i| *i == ByteCode::Label(label.to_string())).unwrap_or(0).saturating_sub(current);
             }
             ByteCode::Jmp { label, offset } => {
-                *offset = cloned.iter().position(|i| *i == ByteCode::Label(label.to_string())).unwrap_or(0) - current;
+                *offset = cloned.iter().position(|i| *i == ByteCode::Label(label.to_string())).unwrap_or(0).saturating_sub(current);
             }
             _ => ()
         }
@@ -96,6 +96,13 @@ fn main() -> Result<(), ()> {
             a := 99;
         else
             a := 88;
+        end
+    "#;
+
+    let easy = r#"
+        a := 0;
+        while a < 10 do
+            a := a + 1;
         end
     "#;
 
