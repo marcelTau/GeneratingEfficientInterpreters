@@ -14,6 +14,33 @@ mod expr;
 //mod interpreter;
 //use interpreter::*;
 
+/*
+a := 1
+b := 2
+
+if a == b {
+    do stuff
+} else {
+    do other stuff
+}
+
+push 1
+var a
+push 2
+var b
+cmp a,b // if a == b
+jz L1
+do if block
+jmp L2
+L1: do else block
+L2: continue other stuff 
+
+
+
+ */
+
+
+
 mod bytecode;
 
 use std::{rc::Rc, ops::Deref};
@@ -45,10 +72,12 @@ fn main() -> Result<(), ()> {
     "#;
 
     let easy = r#"
-        a := 10;
-        b := 12;
-        c := a + b;
-
+        a := 0;
+        if 10 == 20 then
+            a := 99;
+        else
+            a := 88;
+        end
     "#;
 
     let mut scanner = Scanner::new(easy);
@@ -64,6 +93,8 @@ fn main() -> Result<(), ()> {
     let mut gen = BytecodeGenerator::new();
     let insts = gen.generate(Rc::new(statements));
 
+    println!("===== Code =====");
+    println!("{easy}");
     println!("===== Variables =====");
     gen.show_variables();
     println!("=====================");

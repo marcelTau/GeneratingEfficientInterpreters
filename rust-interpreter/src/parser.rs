@@ -333,6 +333,10 @@ impl Parser {
             None
         };
 
+        if self.check(&TokenType::End) {
+            self.consume(&TokenType::End, "");
+        }
+
         Ok(Stmt::If(Rc::new(IfStmt {
             condition: Rc::new(condition),
             then_branch,

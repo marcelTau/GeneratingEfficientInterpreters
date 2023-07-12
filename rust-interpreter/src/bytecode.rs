@@ -25,18 +25,26 @@ pub enum ByteCode {
     Gte,
     And,
     Or,
+    Jz { label: String, offset: usize },
+    JNz { label: String, offset: usize },
+    Jmp { label: String, offset: usize },
+    Label(String) // Start of a new label
 }
 
 pub struct BytecodeGenerator {
     instructions: Rc<RefCell<Vec<ByteCode>>>,
     variables: Rc<RefCell<HashMap<String, usize>>>,
+    label_counter: Rc<RefCell<usize>>,
 }
+
+static mut LABEL_COUNTER: usize = 0;
 
 impl BytecodeGenerator {
     pub fn new() -> Self {
         BytecodeGenerator {
             instructions: Rc::new(RefCell::new(vec![])),
             variables: Rc::new(RefCell::new(HashMap::new())),
+            label_counter: Rc::new(RefCell::new(0)),
         }
     }
 
@@ -52,15 +60,52 @@ impl BytecodeGenerator {
             println!("{k} = {v}");
         }
     }
+
+    unsafe fn generate_label(&self, msg: &str) -> String {
+        let label = "L_".to_string() + msg + &LABEL_COUNTER.to_string();
+        LABEL_COUNTER += 1;
+        label
+    }
 }
 
 impl StmtVisitor<()> for BytecodeGenerator {
     fn visit_block_stmt(&self, stmt: &BlockStmt) -> Result<(), ()> {
-        todo!()
+        stmt.statements.iter().try_for_each(|s| s.accept(self))
     }
 
     fn visit_if_stmt(&self, stmt: &IfStmt) -> Result<(), ()> {
-        todo!()
+        stmt.condition.accept(self);
+
+        let if_label = unsafe { self.generate_label("if_label") };
+        let else_label = unsafe { self.generate_label("else_label") };
+        let end_of_if_label = unsafe { self.generate_label("end_of_if_label") };
+
+        let insts = self.instructions.borrow().clone();
+
+        match insts.as_slice() {
+            [.., ByteCode::Push(1)] => { // True case
+                self.instructions.borrow_mut().pop();
+                // dont insert label, no jump, just continue executing
+                //self.instructions.borrow_mut().push(ByteCode::JNz { label: label.clone(), offset: 0 });
+            }
+            [.., ByteCode::Push(0)] => { // False case
+                self.instructions.borrow_mut().pop();
+                self.instructions.borrow_mut().push(ByteCode::Jz { label: else_label.clone(), offset: 0 });
+            },
+            _ => unimplemented!()
+        }
+        stmt.then_branch.accept(self);
+        self.instructions.borrow_mut().push(ByteCode::Jmp { label: end_of_if_label.clone(), offset: 0 });
+        self.instructions.borrow_mut().push(ByteCode::Label(else_label));
+
+        match &stmt.else_branch {
+            Some(branch) => {
+                branch.accept(self);
+            },
+            None => ()
+        }
+        self.instructions.borrow_mut().push(ByteCode::Label(end_of_if_label));
+        Ok(())
     }
 
     fn visit_expression_stmt(
@@ -139,11 +184,12 @@ impl ExprVisitor<()> for BytecodeGenerator {
             Token { token_type: TokenType::Minus, .. } => perform_operation!(self, insts, -, Sub),
             Token { token_type: TokenType::Star, .. } => perform_operation!(self, insts, *, Mul),
             Token { token_type: TokenType::EqualEqual, .. } => perform_operation!(self, insts, ==, Eq),
+            Token { token_type: TokenType::BangEqual, .. } => perform_operation!(self, insts, !=, NEq),
             Token { token_type: TokenType::LessEqual, .. } => perform_operation!(self, insts, <=, Lte),
             Token { token_type: TokenType::Less, .. } => perform_operation!(self, insts, <, Lt),
             Token { token_type: TokenType::GreaterEqual, .. } => perform_operation!(self, insts, >=, Gte),
             Token { token_type: TokenType::Greater, .. } => perform_operation!(self, insts, >, Gt),
-            _ => unimplemented!(),
+            x => unimplemented!("{:?}", x),
         }
         Ok(())
     }
