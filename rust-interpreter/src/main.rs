@@ -42,8 +42,27 @@ L2: continue other stuff
 
 
 mod bytecode;
+use bytecode::ByteCode;
 
 use std::{rc::Rc, ops::Deref};
+
+fn resolve_labels(code: &mut [ByteCode]) {
+    let cloned = code.to_owned();
+    for (current, inst) in code.iter_mut().enumerate() {
+        match inst {
+            ByteCode::Jz { label, offset } => {
+                *offset = cloned.iter().position(|i| *i == ByteCode::Label(label.to_string())).unwrap_or(0) - current;
+            }
+            ByteCode::JNz { label, offset } => {
+                *offset = cloned.iter().position(|i| *i == ByteCode::Label(label.to_string())).unwrap_or(0) - current;
+            }
+            ByteCode::Jmp { label, offset } => {
+                *offset = cloned.iter().position(|i| *i == ByteCode::Label(label.to_string())).unwrap_or(0) - current;
+            }
+            _ => ()
+        }
+    }
+}
 
 fn main() -> Result<(), ()> {
     let code = r#"
@@ -91,7 +110,10 @@ fn main() -> Result<(), ()> {
     }
 
     let mut gen = BytecodeGenerator::new();
-    let insts = gen.generate(Rc::new(statements));
+    let mut insts = gen.generate(Rc::new(statements));
+
+    resolve_labels(&mut insts);
+
 
     println!("===== Code =====");
     println!("{easy}");

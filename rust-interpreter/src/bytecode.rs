@@ -9,7 +9,7 @@ use crate::scanner::TokenType;
 use crate::stmt::*;
 use crate::Object;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ByteCode {
     Push(usize),
     Pop,
