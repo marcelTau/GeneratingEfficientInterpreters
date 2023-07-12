@@ -25,10 +25,12 @@ pub enum ByteCode {
     Gte,
     And,
     Or,
-    Jz { label: String, offset: usize },
-    JNz { label: String, offset: usize },
-    Jmp { label: String, offset: usize },
-    Label(String) // Start of a new label
+    Jz { label: String, offset: i32 },
+    JNz { label: String, offset: i32 },
+    Jmp { label: String, offset: i32 },
+    Label(String), // Start of a new label
+    Print,
+    Assign(String),
 }
 
 pub struct BytecodeGenerator {
@@ -82,18 +84,19 @@ impl StmtVisitor<()> for BytecodeGenerator {
 
         let insts = self.instructions.borrow().clone();
 
-        match insts.as_slice() {
-            [.., ByteCode::Push(1)] => { // True case
-                self.instructions.borrow_mut().pop();
-                // dont insert label, no jump, just continue executing
-                //self.instructions.borrow_mut().push(ByteCode::JNz { label: label.clone(), offset: 0 });
-            }
-            [.., ByteCode::Push(0)] => { // False case
-                self.instructions.borrow_mut().pop();
-                self.instructions.borrow_mut().push(ByteCode::Jz { label: else_label.clone(), offset: 0 });
-            },
-            _ => unimplemented!()
-        }
+        //match insts.as_slice() {
+            //[.., ByteCode::Push(1)] => { // True case
+                //self.instructions.borrow_mut().pop();
+                //// dont insert label, no jump, just continue executing
+                ////self.instructions.borrow_mut().push(ByteCode::JNz { label: label.clone(), offset: 0 });
+            //}
+            //[.., ByteCode::Push(0)] => { // False case
+                //self.instructions.borrow_mut().pop();
+                //self.instructions.borrow_mut().push(ByteCode::Jz { label: else_label.clone(), offset: 0 });
+            //},
+            //_ => unimplemented!()
+        //}
+        self.instructions.borrow_mut().push(ByteCode::Jz { label: else_label.clone(), offset: 0 });
         stmt.then_branch.accept(self);
         self.instructions.borrow_mut().push(ByteCode::Jmp { label: end_of_if_label.clone(), offset: 0 });
         self.instructions.borrow_mut().push(ByteCode::Label(else_label));
@@ -116,7 +119,9 @@ impl StmtVisitor<()> for BytecodeGenerator {
     }
 
     fn visit_print_stmt(&self, stmt: &PrintStmt) -> Result<(), ()> {
-        todo!()
+        stmt.expression.accept(self);
+        self.instructions.borrow_mut().push(ByteCode::Print);
+        Ok(())
     }
 
     fn visit_while_stmt(&self, stmt: &WhileStmt) -> Result<(), ()> {
@@ -171,14 +176,15 @@ impl ExprVisitor<()> for BytecodeGenerator {
     fn visit_assign_expr(&self, expr: &AssignExpr) -> Result<(), ()> {
         expr.value.accept(self);
         if let Some(Object::Variable(name)) = &expr.name.literal {
-            self.instructions.borrow_mut().push(ByteCode::Var(name.to_string()));
-            let insts = self.instructions.borrow().clone();
-            match insts.as_slice() {
-                [.., ByteCode::Push(value), _] => {
-                    self.variables.borrow_mut().insert(name.to_string(), *value);
-                }
-                _ => panic!()
-            }
+            self.instructions.borrow_mut().push(ByteCode::Assign(name.to_string()));
+            //let insts = self.instructions.borrow().clone();
+            //println!("{insts:?}");
+            //match insts.as_slice() {
+                //[.., ByteCode::Push(value), _] => {
+                    //self.variables.borrow_mut().insert(name.to_string(), *value);
+                //}
+                //_ => panic!()
+            //}
         }
         Ok(())
     }
@@ -189,15 +195,19 @@ impl ExprVisitor<()> for BytecodeGenerator {
         expr.right.accept(self);
         let insts = self.instructions.borrow().clone();
         match &expr.operator {
-            Token { token_type: TokenType::Plus, .. } => perform_operation!(self, insts, +, Add),
-            Token { token_type: TokenType::Minus, .. } => perform_operation!(self, insts, -, Sub),
-            Token { token_type: TokenType::Star, .. } => perform_operation!(self, insts, *, Mul),
-            Token { token_type: TokenType::EqualEqual, .. } => perform_operation!(self, insts, ==, Eq),
-            Token { token_type: TokenType::BangEqual, .. } => perform_operation!(self, insts, !=, NEq),
-            Token { token_type: TokenType::LessEqual, .. } => perform_operation!(self, insts, <=, Lte),
-            Token { token_type: TokenType::Less, .. } => perform_operation!(self, insts, <, Lt),
-            Token { token_type: TokenType::GreaterEqual, .. } => perform_operation!(self, insts, >=, Gte),
-            Token { token_type: TokenType::Greater, .. } => perform_operation!(self, insts, >, Gt),
+            //Token { token_type: TokenType::Plus, .. } => perform_operation!(self, insts, +, Add),
+            //Token { token_type: TokenType::Minus, .. } => perform_operation!(self, insts, -, Sub),
+            //Token { token_type: TokenType::Star, .. } => perform_operation!(self, insts, *, Mul),
+            Token { token_type: TokenType::Plus, .. } => self.instructions.borrow_mut().push(ByteCode::Add),
+            Token { token_type: TokenType::Minus, .. } => self.instructions.borrow_mut().push(ByteCode::Sub),
+            Token { token_type: TokenType::Star, .. } => self.instructions.borrow_mut().push(ByteCode::Mul),
+
+            Token { token_type: TokenType::EqualEqual, .. } => self.instructions.borrow_mut().push(ByteCode::Eq),
+            Token { token_type: TokenType::BangEqual, .. } => self.instructions.borrow_mut().push(ByteCode::NEq),
+            Token { token_type: TokenType::LessEqual, .. } => self.instructions.borrow_mut().push(ByteCode::Lte),
+            Token { token_type: TokenType::Less, .. } => self.instructions.borrow_mut().push(ByteCode::Lt),
+            Token { token_type: TokenType::GreaterEqual, .. } => self.instructions.borrow_mut().push(ByteCode::Gte),
+            Token { token_type: TokenType::Greater, .. } => self.instructions.borrow_mut().push(ByteCode::Gte),
             x => unimplemented!("{:?}", x),
         }
         Ok(())
