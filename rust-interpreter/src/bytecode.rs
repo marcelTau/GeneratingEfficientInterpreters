@@ -31,6 +31,8 @@ pub enum ByteCode {
     Label(String), // Start of a new label
     Print,
     Assign(String),
+    PushAdd(usize),
+    AssignPushAdd { name: String, value: usize },
 }
 
 pub struct BytecodeGenerator {
