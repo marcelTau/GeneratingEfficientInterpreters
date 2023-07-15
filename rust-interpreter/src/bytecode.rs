@@ -31,7 +31,12 @@ pub enum ByteCode {
     Label(String), // Start of a new label
     Print,
     Assign(String),
+
+    /// Superinstructions
+
+    #[cfg(feature = "PushAdd")]
     PushAdd(usize),
+    #[cfg(feature = "AssignPushAdd")]
     AssignPushAdd { name: String, value: usize },
 }
 

@@ -51,7 +51,7 @@ fn resolve_labels(code: &mut [ByteCode]) {
 }
 
 fn run_file(path: std::path::PathBuf) -> Result<(), ()> {
-    println!("===== {} =====", &path.to_str().unwrap());
+    //println!("===== {} =====", &path.to_str().unwrap());
     let code = read_to_string(&path).expect(&format!("There is no file '{path:?}'"));
 
     // Start the benchmark (generating)
@@ -69,9 +69,9 @@ fn run_file(path: std::path::PathBuf) -> Result<(), ()> {
     insert_superinstructions(&mut insts);
     resolve_labels(&mut insts);
 
-    for inst in insts.iter() {
-        println!("{inst:?}");
-    }
+    //for inst in insts.iter() {
+        //println!("{inst:?}");
+    //}
 
     let elapsed_time = now.elapsed();
     println!("Generating bytecode took {}ms.", elapsed_time.as_millis());
@@ -102,28 +102,44 @@ fn insert_superinstructions(insts: &mut Vec<ByteCode>) {
     let mut i = 1;
 
     while i < insts.len() - 1 {
-        if let ByteCode::Add = insts[i] {
-            if let ByteCode::Push(value) = insts[i - 1] {
-                insts[i] = ByteCode::PushAdd(value);
-                insts.remove(i - 1);
-                i -= 1;
+        match insts[i] {
+            #[cfg(feature = "PushAdd")]
+            ByteCode::Add => {
+                match insts[i - 1] {
+                    ByteCode::Push(value) => {
+                        insts[i] = ByteCode::PushAdd(value);
+                        insts.remove(i - 1);
+                        i -= 1;
+                    }
+                    _ => ()
+                }
             }
-        } else if let ByteCode::Assign(ref name) = insts[i] {
-            if let ByteCode::PushAdd(value) = insts[i - 1] {
-                insts[i] = ByteCode::AssignPushAdd {
-                    name: name.to_string(),
-                    value,
-                };
-                insts.remove(i - 1);
-                i -= 1;
+            #[cfg(feature = "AssignPushAdd")]
+            ByteCode::Assign(ref name) => {
+                match insts[i - 1] {
+
+                    ByteCode::PushAdd(value) => {
+                        insts[i] = ByteCode::AssignPushAdd {
+                            name: name.to_string(),
+                            value,
+                        };
+                        insts.remove(i - 1);
+                        i -= 1;
+                    }
+                    _ => ()
+                }
             }
+            _ => ()
         }
         i += 1;
     }
 }
 
 fn main() -> Result<(), ()> {
-    run_file(PathBuf::from("./benchmarks/increment_loop_1000000.imp"));
+    let mut args = std::env::args();
+    run_file(PathBuf::from(args.nth(1).expect("Pls provide a filename")));
+
+    //run_file(PathBuf::from("./benchmarks/increment_loop_1000000.imp"));
     //run_benchmarks();
     return Ok(());
     //let easy = r#"

@@ -23,20 +23,9 @@ impl ByteCodeInterpreter {
             //println!("Current: {:?}", inst);
             //println!("pc: {:?}", self.pc);
             match inst {
-                ByteCode::PushAdd(value) => {
-                    let a = self.stack.pop().unwrap();
-                    self.stack.push(a + value);
-                }
                 ByteCode::Assign(var_name) => {
                     let value = self.stack.pop().unwrap();
                     self.variables.insert(var_name.to_string(), value);
-                }
-                ByteCode::AssignPushAdd {
-                    name: var_name,
-                    value: v,
-                } => {
-                    let a = self.stack.pop().unwrap();
-                    self.variables.insert(var_name.to_string(), *v + a);
                 }
                 ByteCode::Push(value) => {
                     self.stack.push(*value);
@@ -117,6 +106,19 @@ impl ByteCodeInterpreter {
                 ByteCode::Print => {
                     let value = self.stack.pop().unwrap();
                     println!("{value}");
+                }
+                #[cfg(feature = "AssignPushAdd")]
+                ByteCode::AssignPushAdd {
+                    name: var_name,
+                    value: v,
+                } => {
+                    let a = self.stack.pop().unwrap();
+                    self.variables.insert(var_name.to_string(), *v + a);
+                }
+                #[cfg(feature = "PushAdd")]
+                ByteCode::PushAdd(value) => {
+                    let a = self.stack.pop().unwrap();
+                    self.stack.push(a + value);
                 }
             }
             self.pc += 1;
