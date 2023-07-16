@@ -43,7 +43,6 @@ pub enum ByteCode {
 pub struct BytecodeGenerator {
     instructions: Rc<RefCell<Vec<ByteCode>>>,
     variables: Rc<RefCell<HashMap<String, usize>>>,
-    label_counter: Rc<RefCell<usize>>,
 }
 
 static mut LABEL_COUNTER: usize = 0;
@@ -53,7 +52,6 @@ impl BytecodeGenerator {
         BytecodeGenerator {
             instructions: Rc::new(RefCell::new(vec![])),
             variables: Rc::new(RefCell::new(HashMap::new())),
-            label_counter: Rc::new(RefCell::new(0)),
         }
     }
 

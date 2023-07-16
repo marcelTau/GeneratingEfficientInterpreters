@@ -36,7 +36,7 @@ impl ByteCodeInterpreter {
                 ByteCode::Add => {
                     let a = self.stack.pop().unwrap();
                     let b = self.stack.pop().unwrap();
-                    self.stack.push(a + b);
+                    self.stack.push(b + a);
                 }
                 ByteCode::Sub => {
                     let a = self.stack.pop().unwrap();
