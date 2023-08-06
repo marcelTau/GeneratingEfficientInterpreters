@@ -19,9 +19,6 @@ impl ByteCodeInterpreter {
     pub fn interpret(&mut self, instructions: &[ByteCode]) {
         while self.pc < instructions.len() as i32 {
             let inst = &instructions[self.pc as usize];
-            //println!("Stack: {:?}", self.stack);
-            //println!("Current: {:?}", inst);
-            //println!("pc: {:?}", self.pc);
             match inst {
                 ByteCode::Assign(var_name) => {
                     let value = self.stack.pop().unwrap();

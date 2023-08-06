@@ -1,5 +1,8 @@
 #![allow(dead_code, non_snake_case, unused)]
 
+mod threaded;
+use threaded::ByteCodeInterpreterThreaded;
+
 mod scanner;
 use bytecode::BytecodeGenerator;
 use scanner::*;
@@ -18,6 +21,7 @@ use bytecode::ByteCode;
 
 use std::{
     collections::HashMap, fs::read_to_string, ops::Deref, path::PathBuf, rc::Rc, time::Instant,
+    io::Write,
 };
 
 fn resolve_labels(code: &mut [ByteCode]) {
@@ -69,9 +73,9 @@ fn run_file(path: std::path::PathBuf) -> Result<(), ()> {
     insert_superinstructions(&mut insts);
     resolve_labels(&mut insts);
 
-    //for inst in insts.iter() {
-        //println!("{inst:?}");
-    //}
+    for inst in insts.iter() {
+        println!("{inst:?}");
+    }
 
     let elapsed_time = now.elapsed();
     println!("Generating bytecode took {}ms.", elapsed_time.as_millis());
@@ -85,6 +89,22 @@ fn run_file(path: std::path::PathBuf) -> Result<(), ()> {
     let elapsed_time = now.elapsed();
     println!("Interpreting took {}ms.", elapsed_time.as_millis());
     println!("---------------------------------------");
+    std::io::stdout().flush();
+
+    // ============================================================================
+    // TEST
+    // ============================================================================
+
+    // Start the benchmark (interpreting)
+    let now = Instant::now();
+
+    let mut bytecode_interpreter = ByteCodeInterpreterThreaded::new(&insts);
+    let now = Instant::now();
+    bytecode_interpreter.start();
+    let elapsed_time = now.elapsed();
+    println!("Interpreting (threaded) took {}ms.", elapsed_time.as_millis());
+    println!("---------------------------------------");
+
     Ok(())
 }
 

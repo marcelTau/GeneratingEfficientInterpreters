@@ -10,6 +10,7 @@ use crate::stmt::*;
 use crate::Object;
 
 #[derive(Debug, Clone, PartialEq)]
+#[repr(u8)]
 pub enum ByteCode {
     Push(usize),
     Pop,
@@ -25,9 +26,18 @@ pub enum ByteCode {
     Gte,
     And,
     Or,
-    Jz { label: String, offset: i32 },
-    JNz { label: String, offset: i32 },
-    Jmp { label: String, offset: i32 },
+    Jz {
+        label: String,
+        offset: i32,
+    },
+    JNz {
+        label: String,
+        offset: i32,
+    },
+    Jmp {
+        label: String,
+        offset: i32,
+    },
     Label(String), // Start of a new label
     Print,
     Assign(String),
@@ -37,8 +47,28 @@ pub enum ByteCode {
     #[cfg(feature = "PushAdd")]
     PushAdd(usize),
     #[cfg(feature = "AssignPushAdd")]
-    AssignPushAdd { name: String, value: usize },
+    AssignPushAdd {
+        name: String,
+        value: usize,
+    },
 }
+
+//impl Eq for ByteCode {}
+
+//impl PartialEq for ByteCode {
+    //fn eq(&self, other: &Self) -> bool {
+        //match (self, other) {
+            ////(ByteCode::Push(_), ByteCode::Push(_)) => true,
+            ////(ByteCode::Assign(_), ByteCode::Assign(_)) => true,
+            //////(ByteCode::Label(_), ByteCode::Label(_)) => true,
+            ////(ByteCode::Var(_), ByteCode::Var(_)) => true,
+            ////(ByteCode::Jz { .. }, ByteCode::Jz { .. }) => true,
+            ////(ByteCode::JNz { .. }, ByteCode::JNz { .. }) => true,
+            ////(ByteCode::Jmp { .. }, ByteCode::Jmp { .. }) => true,
+            //_ => std::ptr::eq(self, other), // Use pointer equality for other variants
+        //}
+    //}
+//}
 
 pub struct BytecodeGenerator {
     instructions: Rc<RefCell<Vec<ByteCode>>>,
@@ -90,36 +120,43 @@ impl StmtVisitor<()> for BytecodeGenerator {
         let insts = self.instructions.borrow().clone();
 
         //match insts.as_slice() {
-            //[.., ByteCode::Push(1)] => { // True case
-                //self.instructions.borrow_mut().pop();
-                //// dont insert label, no jump, just continue executing
-                ////self.instructions.borrow_mut().push(ByteCode::JNz { label: label.clone(), offset: 0 });
-            //}
-            //[.., ByteCode::Push(0)] => { // False case
-                //self.instructions.borrow_mut().pop();
-                //self.instructions.borrow_mut().push(ByteCode::Jz { label: else_label.clone(), offset: 0 });
-            //},
-            //_ => unimplemented!()
+        //[.., ByteCode::Push(1)] => { // True case
+        //self.instructions.borrow_mut().pop();
+        //// dont insert label, no jump, just continue executing
+        ////self.instructions.borrow_mut().push(ByteCode::JNz { label: label.clone(), offset: 0 });
         //}
-        self.instructions.borrow_mut().push(ByteCode::Jz { label: else_label.clone(), offset: 0 });
+        //[.., ByteCode::Push(0)] => { // False case
+        //self.instructions.borrow_mut().pop();
+        //self.instructions.borrow_mut().push(ByteCode::Jz { label: else_label.clone(), offset: 0 });
+        //},
+        //_ => unimplemented!()
+        //}
+        self.instructions.borrow_mut().push(ByteCode::Jz {
+            label: else_label.clone(),
+            offset: 0,
+        });
         stmt.then_branch.accept(self);
-        self.instructions.borrow_mut().push(ByteCode::Jmp { label: end_of_if_label.clone(), offset: 0 });
-        self.instructions.borrow_mut().push(ByteCode::Label(else_label));
+        self.instructions.borrow_mut().push(ByteCode::Jmp {
+            label: end_of_if_label.clone(),
+            offset: 0,
+        });
+        self.instructions
+            .borrow_mut()
+            .push(ByteCode::Label(else_label));
 
         match &stmt.else_branch {
             Some(branch) => {
                 branch.accept(self);
-            },
-            None => ()
+            }
+            None => (),
         }
-        self.instructions.borrow_mut().push(ByteCode::Label(end_of_if_label));
+        self.instructions
+            .borrow_mut()
+            .push(ByteCode::Label(end_of_if_label));
         Ok(())
     }
 
-    fn visit_expression_stmt(
-        &self,
-        stmt: &ExpressionStmt,
-    ) -> Result<(), ()> {
+    fn visit_expression_stmt(&self, stmt: &ExpressionStmt) -> Result<(), ()> {
         stmt.expression.accept(self)
     }
 
@@ -133,12 +170,22 @@ impl StmtVisitor<()> for BytecodeGenerator {
         let start_label = unsafe { self.generate_label("start_label") };
         let end_label = unsafe { self.generate_label("end_label") };
 
-        self.instructions.borrow_mut().push(ByteCode::Label(start_label.clone()));
+        self.instructions
+            .borrow_mut()
+            .push(ByteCode::Label(start_label.clone()));
         stmt.condition.accept(self);
-        self.instructions.borrow_mut().push(ByteCode::Jz { label: end_label.clone(), offset: 0 });
+        self.instructions.borrow_mut().push(ByteCode::Jz {
+            label: end_label.clone(),
+            offset: 0,
+        });
         stmt.body.accept(self);
-        self.instructions.borrow_mut().push(ByteCode::Jmp { label: start_label, offset: 0 });
-        self.instructions.borrow_mut().push(ByteCode::Label(end_label));
+        self.instructions.borrow_mut().push(ByteCode::Jmp {
+            label: start_label,
+            offset: 0,
+        });
+        self.instructions
+            .borrow_mut()
+            .push(ByteCode::Label(end_label));
         Ok(())
     }
 }
@@ -181,14 +228,16 @@ impl ExprVisitor<()> for BytecodeGenerator {
     fn visit_assign_expr(&self, expr: &AssignExpr) -> Result<(), ()> {
         expr.value.accept(self);
         if let Some(Object::Variable(name)) = &expr.name.literal {
-            self.instructions.borrow_mut().push(ByteCode::Assign(name.to_string()));
+            self.instructions
+                .borrow_mut()
+                .push(ByteCode::Assign(name.to_string()));
             //let insts = self.instructions.borrow().clone();
             //println!("{insts:?}");
             //match insts.as_slice() {
-                //[.., ByteCode::Push(value), _] => {
-                    //self.variables.borrow_mut().insert(name.to_string(), *value);
-                //}
-                //_ => panic!()
+            //[.., ByteCode::Push(value), _] => {
+            //self.variables.borrow_mut().insert(name.to_string(), *value);
+            //}
+            //_ => panic!()
             //}
         }
         Ok(())
@@ -203,16 +252,43 @@ impl ExprVisitor<()> for BytecodeGenerator {
             //Token { token_type: TokenType::Plus, .. } => perform_operation!(self, insts, +, Add),
             //Token { token_type: TokenType::Minus, .. } => perform_operation!(self, insts, -, Sub),
             //Token { token_type: TokenType::Star, .. } => perform_operation!(self, insts, *, Mul),
-            Token { token_type: TokenType::Plus, .. } => self.instructions.borrow_mut().push(ByteCode::Add),
-            Token { token_type: TokenType::Minus, .. } => self.instructions.borrow_mut().push(ByteCode::Sub),
-            Token { token_type: TokenType::Star, .. } => self.instructions.borrow_mut().push(ByteCode::Mul),
+            Token {
+                token_type: TokenType::Plus,
+                ..
+            } => self.instructions.borrow_mut().push(ByteCode::Add),
+            Token {
+                token_type: TokenType::Minus,
+                ..
+            } => self.instructions.borrow_mut().push(ByteCode::Sub),
+            Token {
+                token_type: TokenType::Star,
+                ..
+            } => self.instructions.borrow_mut().push(ByteCode::Mul),
 
-            Token { token_type: TokenType::EqualEqual, .. } => self.instructions.borrow_mut().push(ByteCode::Eq),
-            Token { token_type: TokenType::BangEqual, .. } => self.instructions.borrow_mut().push(ByteCode::NEq),
-            Token { token_type: TokenType::LessEqual, .. } => self.instructions.borrow_mut().push(ByteCode::Lte),
-            Token { token_type: TokenType::Less, .. } => self.instructions.borrow_mut().push(ByteCode::Lt),
-            Token { token_type: TokenType::GreaterEqual, .. } => self.instructions.borrow_mut().push(ByteCode::Gte),
-            Token { token_type: TokenType::Greater, .. } => self.instructions.borrow_mut().push(ByteCode::Gte),
+            Token {
+                token_type: TokenType::EqualEqual,
+                ..
+            } => self.instructions.borrow_mut().push(ByteCode::Eq),
+            Token {
+                token_type: TokenType::BangEqual,
+                ..
+            } => self.instructions.borrow_mut().push(ByteCode::NEq),
+            Token {
+                token_type: TokenType::LessEqual,
+                ..
+            } => self.instructions.borrow_mut().push(ByteCode::Lte),
+            Token {
+                token_type: TokenType::Less,
+                ..
+            } => self.instructions.borrow_mut().push(ByteCode::Lt),
+            Token {
+                token_type: TokenType::GreaterEqual,
+                ..
+            } => self.instructions.borrow_mut().push(ByteCode::Gte),
+            Token {
+                token_type: TokenType::Greater,
+                ..
+            } => self.instructions.borrow_mut().push(ByteCode::Gte),
             x => unimplemented!("{:?}", x),
         }
         Ok(())
