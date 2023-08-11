@@ -1,0 +1,11 @@
+a := 0;
+b := 1;
+n := 70;
+
+while n > 1 do
+    print a;
+    temp := a;
+    a := b;
+    b := temp + b;
+    n := n - 1;
+end

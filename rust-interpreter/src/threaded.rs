@@ -43,6 +43,14 @@ impl ByteCodeInterpreterThreaded {
         interp.ops.insert(std::mem::discriminant(&ByteCode::Label("".to_string()) ), Self::op_label);
         interp.ops.insert(std::mem::discriminant(&ByteCode::Print), Self::op_print);
         interp.ops.insert(std::mem::discriminant(&ByteCode::Assign("i".to_string()) ), Self::op_assign);
+
+        #[cfg(feature = "AssignPushAdd")]
+        interp.ops.insert(std::mem::discriminant(&ByteCode::AssignPushAdd { name: "".to_string(), value: 0 }), Self::op_assign_push_add);
+        #[cfg(feature = "PushAdd")]
+        interp.ops.insert(std::mem::discriminant(&ByteCode::PushAdd(0) ), Self::op_push_add);
+        #[cfg(feature = "PushAssign")]
+        interp.ops.insert(std::mem::discriminant(&ByteCode::PushAssign { name: "".to_string(), value: 0 }), Self::op_push_assign);
+
         interp
     }
 
@@ -122,7 +130,6 @@ impl ByteCodeInterpreterThreaded {
         let a = self.stack.pop().unwrap();
         let b = self.stack.pop().unwrap();
         self.stack.push((b < a) as usize);
-        println!("PUSHED ON STACK");
         self.next()
     }
 
@@ -197,6 +204,32 @@ impl ByteCodeInterpreterThreaded {
         if let ByteCode::Assign(var_name) = &self.instructions[self.pc as usize] {
             let value = self.stack.pop().unwrap();
             self.variables.insert(var_name.to_string(), value);
+        }
+        self.next();
+    }
+
+
+    #[cfg(feature = "PushAdd")]
+    fn op_push_add(&mut self) {
+        if let ByteCode::PushAdd(value) = &self.instructions[self.pc as usize] {
+            let a = self.stack.pop().unwrap();
+            self.stack.push(a + *value);
+        }
+        self.next();
+    }
+
+    #[cfg(feature = "AssignPushAdd")]
+    fn op_assign_push_add(&mut self) {
+        if let ByteCode::AssignPushAdd { name, value } = &self.instructions[self.pc as usize] {
+            let x = self.stack.pop().unwrap();
+            self.variables.insert(name.to_string(), value + x);
+        }
+        self.next();
+    }
+    #[cfg(feature = "PushAssign")]
+    fn op_push_assign(&mut self) {
+        if let ByteCode::PushAssign { name, value } = &self.instructions[self.pc as usize] {
+            self.variables.insert(name.to_string(), *value);
         }
         self.next();
     }

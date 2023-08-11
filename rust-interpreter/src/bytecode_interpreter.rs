@@ -117,6 +117,10 @@ impl ByteCodeInterpreter {
                     let a = self.stack.pop().unwrap();
                     self.stack.push(a + value);
                 }
+                #[cfg(feature = "PushAssign")]
+                ByteCode::PushAssign { name, value } => {
+                    self.variables.insert(name.to_string(), *value);
+                }
             }
             self.pc += 1;
         }

@@ -293,7 +293,10 @@ impl Parser {
         }
 
         if !self.check(&TokenType::Else) {
-            self.consume(&TokenType::End, "Expect 'end' after block.")?;
+            if self.check(&TokenType::End) {
+                self.consume(&TokenType::End, "Expect 'end' after block.")?;
+            }
+
         }
         Ok(statements)
     }

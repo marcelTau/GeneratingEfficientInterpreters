@@ -51,6 +51,11 @@ pub enum ByteCode {
         name: String,
         value: usize,
     },
+    #[cfg(feature = "PushAssign")]
+    PushAssign {
+        name: String,
+        value: usize
+    }
 }
 
 //impl Eq for ByteCode {}

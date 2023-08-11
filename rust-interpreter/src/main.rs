@@ -88,7 +88,7 @@ fn run_file(path: std::path::PathBuf) -> Result<(), ()> {
     bytecode_interpreter.interpret(&insts);
     let elapsed_time = now.elapsed();
     println!("Interpreting took {}ms.", elapsed_time.as_millis());
-    println!("---------------------------------------");
+    //println!("---------------------------------------");
     std::io::stdout().flush();
 
     // ============================================================================
@@ -103,7 +103,7 @@ fn run_file(path: std::path::PathBuf) -> Result<(), ()> {
     bytecode_interpreter.start();
     let elapsed_time = now.elapsed();
     println!("Interpreting (threaded) took {}ms.", elapsed_time.as_millis());
-    println!("---------------------------------------");
+    //println!("---------------------------------------");
 
     Ok(())
 }
@@ -137,9 +137,18 @@ fn insert_superinstructions(insts: &mut Vec<ByteCode>) {
             #[cfg(feature = "AssignPushAdd")]
             ByteCode::Assign(ref name) => {
                 match insts[i - 1] {
-
+                    #[cfg(feature = "AssignPushAdd")]
                     ByteCode::PushAdd(value) => {
                         insts[i] = ByteCode::AssignPushAdd {
+                            name: name.to_string(),
+                            value,
+                        };
+                        insts.remove(i - 1);
+                        i -= 1;
+                    }
+                    #[cfg(feature = "PushAssign")]
+                    ByteCode::Push(value) => {
+                        insts[i] = ByteCode::PushAssign {
                             name: name.to_string(),
                             value,
                         };
