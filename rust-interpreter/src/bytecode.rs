@@ -17,6 +17,7 @@ pub enum ByteCode {
     Add,
     Sub,
     Mul,
+    Mod,
     Var(String),
     Eq,
     NEq,
@@ -115,6 +116,14 @@ impl StmtVisitor<()> for BytecodeGenerator {
         stmt.statements.iter().try_for_each(|s| s.accept(self))
     }
 
+    fn visit_continue_stmt(&self, stmt: &ContinueStmt) -> Result<(), ()> {
+        self.instructions.borrow_mut().push(ByteCode::Jmp {
+            label: "continue".to_string(),
+            offset: 0,
+        });
+        Ok(())
+    }
+
     fn visit_if_stmt(&self, stmt: &IfStmt) -> Result<(), ()> {
         stmt.condition.accept(self);
 
@@ -172,8 +181,8 @@ impl StmtVisitor<()> for BytecodeGenerator {
     }
 
     fn visit_while_stmt(&self, stmt: &WhileStmt) -> Result<(), ()> {
-        let start_label = unsafe { self.generate_label("start_label") };
-        let end_label = unsafe { self.generate_label("end_label") };
+        let start_label = unsafe { self.generate_label("while_start_label") };
+        let end_label = unsafe { self.generate_label("while_end_label") };
 
         self.instructions
             .borrow_mut()
@@ -269,6 +278,10 @@ impl ExprVisitor<()> for BytecodeGenerator {
                 token_type: TokenType::Star,
                 ..
             } => self.instructions.borrow_mut().push(ByteCode::Mul),
+            Token {
+                token_type: TokenType::Percent,
+                ..
+            } => self.instructions.borrow_mut().push(ByteCode::Mod),
 
             Token {
                 token_type: TokenType::EqualEqual,

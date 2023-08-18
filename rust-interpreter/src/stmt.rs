@@ -10,6 +10,7 @@ pub enum Stmt {
     Expression(Rc<ExpressionStmt>),
     Print(Rc<PrintStmt>),
     While(Rc<WhileStmt>),
+    Continue(Rc<ContinueStmt>),
 }
 
 impl Stmt {
@@ -20,6 +21,7 @@ impl Stmt {
             Stmt::Expression(x) => visitor.visit_expression_stmt(x),
             Stmt::Print(x) => visitor.visit_print_stmt(x),
             Stmt::While(x) => visitor.visit_while_stmt(x),
+            Stmt::Continue(x) => visitor.visit_continue_stmt(x),
         }
     }
 }
@@ -34,6 +36,10 @@ pub struct IfStmt {
     pub condition: Rc<Expr>,
     pub then_branch: Rc<Stmt>,
     pub else_branch: Option<Rc<Stmt>>,
+}
+
+#[derive(Debug)]
+pub struct ContinueStmt {
 }
 
 #[derive(Debug)]
@@ -58,5 +64,6 @@ pub trait StmtVisitor<T> {
     fn visit_expression_stmt(&self, stmt: &ExpressionStmt) -> Result<T, ()>;
     fn visit_print_stmt(&self, stmt: &PrintStmt) -> Result<T, ()>;
     fn visit_while_stmt(&self, stmt: &WhileStmt) -> Result<T, ()>;
+    fn visit_continue_stmt(&self, stmt: &ContinueStmt) -> Result<T, ()>;
 }
 

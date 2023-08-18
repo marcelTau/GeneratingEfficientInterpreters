@@ -10,8 +10,8 @@ use scanner::*;
 mod parser;
 use parser::*;
 
-mod stmt;
 mod expr;
+mod stmt;
 
 mod bytecode_interpreter;
 use bytecode_interpreter::*;
@@ -20,8 +20,8 @@ mod bytecode;
 use bytecode::ByteCode;
 
 use std::{
-    collections::HashMap, fs::read_to_string, ops::Deref, path::PathBuf, rc::Rc, time::Instant,
-    io::Write,
+    collections::HashMap, fs::read_to_string, io::Write, ops::Deref, path::PathBuf, rc::Rc,
+    time::Instant,
 };
 
 fn resolve_labels(code: &mut [ByteCode]) {
@@ -43,11 +43,26 @@ fn resolve_labels(code: &mut [ByteCode]) {
                     - current as i32;
             }
             ByteCode::Jmp { label, offset } => {
-                *offset = cloned
-                    .iter()
-                    .position(|i| *i == ByteCode::Label(label.to_string()))
-                    .unwrap_or(0) as i32
-                    - current as i32;
+                if label == "continue" {
+                    *offset = cloned
+                        .iter()
+                        .position(|i| { 
+                            if let ByteCode::Label(label) = i { 
+                                label.contains("while") 
+                            } else { 
+                                false 
+                            } 
+                        })
+                        .unwrap_or(0) as i32
+                        - current as i32;
+
+                } else {
+                    *offset = cloned
+                        .iter()
+                        .position(|i| *i == ByteCode::Label(label.to_string()))
+                        .unwrap_or(0) as i32
+                        - current as i32;
+                }
             }
             _ => (),
         }
@@ -102,7 +117,10 @@ fn run_file(path: std::path::PathBuf) -> Result<(), ()> {
     let now = Instant::now();
     bytecode_interpreter.start();
     let elapsed_time = now.elapsed();
-    println!("Interpreting (threaded) took {}ms.", elapsed_time.as_millis());
+    println!(
+        "Interpreting (threaded) took {}ms.",
+        elapsed_time.as_millis()
+    );
     //println!("---------------------------------------");
 
     Ok(())
@@ -124,41 +142,37 @@ fn insert_superinstructions(insts: &mut Vec<ByteCode>) {
     while i < insts.len() - 1 {
         match insts[i] {
             #[cfg(feature = "PushAdd")]
-            ByteCode::Add => {
-                match insts[i - 1] {
-                    ByteCode::Push(value) => {
-                        insts[i] = ByteCode::PushAdd(value);
-                        insts.remove(i - 1);
-                        i -= 1;
-                    }
-                    _ => ()
+            ByteCode::Add => match insts[i - 1] {
+                ByteCode::Push(value) => {
+                    insts[i] = ByteCode::PushAdd(value);
+                    insts.remove(i - 1);
+                    i -= 1;
                 }
-            }
+                _ => (),
+            },
             #[cfg(feature = "AssignPushAdd")]
-            ByteCode::Assign(ref name) => {
-                match insts[i - 1] {
-                    #[cfg(feature = "AssignPushAdd")]
-                    ByteCode::PushAdd(value) => {
-                        insts[i] = ByteCode::AssignPushAdd {
-                            name: name.to_string(),
-                            value,
-                        };
-                        insts.remove(i - 1);
-                        i -= 1;
-                    }
-                    #[cfg(feature = "PushAssign")]
-                    ByteCode::Push(value) => {
-                        insts[i] = ByteCode::PushAssign {
-                            name: name.to_string(),
-                            value,
-                        };
-                        insts.remove(i - 1);
-                        i -= 1;
-                    }
-                    _ => ()
+            ByteCode::Assign(ref name) => match insts[i - 1] {
+                #[cfg(feature = "AssignPushAdd")]
+                ByteCode::PushAdd(value) => {
+                    insts[i] = ByteCode::AssignPushAdd {
+                        name: name.to_string(),
+                        value,
+                    };
+                    insts.remove(i - 1);
+                    i -= 1;
                 }
-            }
-            _ => ()
+                #[cfg(feature = "PushAssign")]
+                ByteCode::Push(value) => {
+                    insts[i] = ByteCode::PushAssign {
+                        name: name.to_string(),
+                        value,
+                    };
+                    insts.remove(i - 1);
+                    i -= 1;
+                }
+                _ => (),
+            },
+            _ => (),
         }
         i += 1;
     }

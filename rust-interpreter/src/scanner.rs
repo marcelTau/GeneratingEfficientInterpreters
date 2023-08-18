@@ -24,6 +24,7 @@ pub enum TokenType {
     Star,
     Semicolon,
     Dot,
+    Percent,
 
     Assignment, // :=
 
@@ -53,6 +54,7 @@ pub enum TokenType {
     End,
     Else,
     Print,
+    Continue,
 
     EOF,
 }
@@ -128,6 +130,17 @@ impl std::ops::Add for Object {
     }
 }
 
+impl std::ops::Rem for Object {
+    type Output = Object;
+
+    fn rem(self, other: Self) -> Object {
+        match (self, other) {
+            (Object::Num(left), Object::Num(right)) => Object::Num(left % right),
+            _ => Object::ArithmeticError,
+        }
+    }
+}
+
 impl std::cmp::PartialOrd for Object {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         match (self, other) {
@@ -173,6 +186,7 @@ impl Scanner {
             ("print".to_string(), TokenType::Print),
             ("true".to_string(), TokenType::True),
             ("false".to_string(), TokenType::False),
+            ("continue".to_string(), TokenType::Continue),
         ]);
         Scanner {
             source_code: source_code.to_string(),
@@ -283,6 +297,7 @@ impl Scanner {
             '+' => self.add_token_single(TokenType::Plus),
             ';' => self.add_token_single(TokenType::Semicolon),
             '*' => self.add_token_single(TokenType::Star),
+            '%' => self.add_token_single(TokenType::Percent),
             ':' => {
                 if self.expect('=') {
                     self.add_token_single(TokenType::Assignment)

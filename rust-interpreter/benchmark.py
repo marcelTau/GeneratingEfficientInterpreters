@@ -73,11 +73,11 @@ def show_results(data):
 
         # Add numerical values to the plot
         for i, val in enumerate(generating_avg_values):
-            plt.annotate( str(round(val, 2)), xy=(x[i] - 0.3, val), xytext=(x[i] - 0.3, 0), ha='center', va='bottom', color='black')
+            plt.annotate( str(round(val, 2)), xy=(x[i] - 0.3, val), xytext=(x[i] - 0.3, 0), ha='center', va='bottom', color='black', fontsize=8)
         for i, val in enumerate(interpreting_avg_values):
-            plt.annotate( str(round(val, 2)), xy=(x[i] + 0, val), xytext=(x[i] + 0.0, 0), ha='center', va='bottom', color='black')
+            plt.annotate( str(round(val, 2)), xy=(x[i] + 0, val), xytext=(x[i] + 0.0, 0), ha='center', va='bottom', color='black', fontsize=8)
         for i, val in enumerate(interpreting_threaded_avg_values):
-            plt.annotate( str(round(val, 2)), xy=(x[i] + 0.3, val), xytext=(x[i] + 0.3, 0), ha='center', va='bottom', color='black')
+            plt.annotate( str(round(val, 2)), xy=(x[i] + 0.3, val), xytext=(x[i] + 0.3, 0), ha='center', va='bottom', color='black', fontsize=8)
 
 # Display the plots
     plt.show()

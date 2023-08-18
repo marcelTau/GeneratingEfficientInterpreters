@@ -197,7 +197,7 @@ impl Parser {
     fn factor(&mut self) -> Result<Expr, ()> {
         let mut expr = self.unary()?;
 
-        while self.is_match(&[TokenType::Star, TokenType::Slash]) {
+        while self.is_match(&[TokenType::Star, TokenType::Slash, TokenType::Percent]) {
             let operator = self.previous();
             let right = self.unary()?;
             expr = Expr::Binary(Rc::new(BinaryExpr {
@@ -276,6 +276,10 @@ impl Parser {
             return Ok(Rc::new(self.while_statement()?));
         }
 
+        if self.is_match(&[TokenType::Continue]) {
+            return Ok(Rc::new(self.continue_statement()?));
+        }
+
         if self.is_match(&[TokenType::Do, TokenType::Then]) {
             return Ok(Rc::new(Stmt::Block(Rc::new(BlockStmt {
                 statements: Rc::new(self.block()?),
@@ -325,6 +329,11 @@ impl Parser {
             condition: Rc::new(condition),
             body,
         })))
+    }
+
+    fn continue_statement(&mut self) -> Result<Stmt, ()> {
+        self.consume(&TokenType::Semicolon, "Expect ';' after expression.")?;
+        Ok(Stmt::Continue(Rc::new(ContinueStmt{})))
     }
 
     fn if_statement(&mut self) -> Result<Stmt, ()> {

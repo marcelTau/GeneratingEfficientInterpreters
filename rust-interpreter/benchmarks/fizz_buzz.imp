@@ -1,0 +1,18 @@
+i := 0;
+
+while i < 1000 do
+    i := i + 1;
+    if i % 3 == 0 && i % 5 == 0 then
+        print 0;
+        continue;
+    end
+    if i % 3 == 0 then
+        print 1;
+        continue;
+    end
+    if i % 5 == 0 then
+        print 2;
+        continue;
+    end
+    print i;
+end

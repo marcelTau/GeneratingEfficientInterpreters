@@ -45,6 +45,11 @@ impl ByteCodeInterpreter {
                     let b = self.stack.pop().unwrap();
                     self.stack.push(b * a);
                 }
+                ByteCode::Mod => {
+                    let a = self.stack.pop().unwrap();
+                    let b = self.stack.pop().unwrap();
+                    self.stack.push(b % a);
+                }
                 ByteCode::Var(name) => {
                     self.stack.push(
                         *self
@@ -83,8 +88,16 @@ impl ByteCodeInterpreter {
                     let b = self.stack.pop().unwrap();
                     self.stack.push((b >= a) as usize);
                 }
-                ByteCode::And => todo!(),
-                ByteCode::Or => todo!(),
+                ByteCode::And => {
+                    let a = self.stack.pop().unwrap();
+                    let b = self.stack.pop().unwrap();
+                    self.stack.push((b == 1 && a == 1) as usize);
+                }
+                ByteCode::Or => {
+                    let a = self.stack.pop().unwrap();
+                    let b = self.stack.pop().unwrap();
+                    self.stack.push((b == 1 || a == 1) as usize);
+                }
                 ByteCode::Jz { label, offset } => {
                     if self.stack.pop() == Some(0) {
                         self.pc += *offset;

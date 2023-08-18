@@ -28,6 +28,7 @@ impl ByteCodeInterpreterThreaded {
         interp.ops.insert(std::mem::discriminant(&ByteCode::Add), Self::op_add);
         interp.ops.insert(std::mem::discriminant(&ByteCode::Sub), Self::op_sub);
         interp.ops.insert(std::mem::discriminant(&ByteCode::Mul), Self::op_mul);
+        interp.ops.insert(std::mem::discriminant(&ByteCode::Mod), Self::op_mod);
         interp.ops.insert(std::mem::discriminant(&ByteCode::Var("".to_string())), Self::op_var);
         interp.ops.insert(std::mem::discriminant(&ByteCode::Eq), Self::op_eq);
         interp.ops.insert(std::mem::discriminant(&ByteCode::NEq), Self::op_neq);
@@ -63,6 +64,7 @@ impl ByteCodeInterpreterThreaded {
         if self.pc >= self.instructions.len() as i32 {
             return;
         }
+
         self.ops[&std::mem::discriminant(&self.instructions[self.pc as usize])](self);
     }
 
@@ -97,6 +99,13 @@ impl ByteCodeInterpreterThreaded {
         let a = self.stack.pop().unwrap();
         let b = self.stack.pop().unwrap();
         self.stack.push(b * a);
+        self.next()
+    }
+
+    fn op_mod(&mut self) {
+        let a = self.stack.pop().unwrap();
+        let b = self.stack.pop().unwrap();
+        self.stack.push(b % a);
         self.next()
     }
 
@@ -155,11 +164,17 @@ impl ByteCodeInterpreterThreaded {
     }
 
     fn op_and(&mut self) {
-        todo!()
+        let a = self.stack.pop().unwrap();
+        let b = self.stack.pop().unwrap();
+        self.stack.push((b == 1 && a == 1) as usize);
+        self.next();
     }
 
     fn op_or(&mut self) {
-        todo!()
+        let a = self.stack.pop().unwrap();
+        let b = self.stack.pop().unwrap();
+        self.stack.push((b == 1 || a == 1) as usize);
+        self.next();
     }
 
     fn op_jz(&mut self) {
